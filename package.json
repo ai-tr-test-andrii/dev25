@@ -1,9 +1,0 @@
-{
-  "name": "sca-inflight-test",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Test project for SCA scanning",
-  "dependencies": {
-    "inflight": "1.0.6"
-  }
-}
