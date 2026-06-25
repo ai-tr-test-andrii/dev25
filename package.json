@@ -1,7 +1,5 @@
 {
   "name": "my-proj1",
   "version": "1.0.0",
-  "dependencies": {
-    "inflight": "1.0.6"
-  }
+  "dependencies": {}
 }
