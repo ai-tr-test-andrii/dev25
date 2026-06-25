@@ -1,3 +1,4 @@
+import html as html_module
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -8,8 +9,8 @@ class VulnerableHandler(BaseHTTPRequestHandler):
         params = parse_qs(parsed.query)
 
         if parsed.path == "/search":
-            # ❌ User input reflected directly into HTML with no escaping
-            query = params.get("q", [""])[0]
+            # Escape user input with html.escape() before reflecting into HTML
+            query = html_module.escape(params.get("q", [""])[0])
 
             html = f"""
             <!DOCTYPE html>
@@ -21,7 +22,6 @@ class VulnerableHandler(BaseHTTPRequestHandler):
                     <input type="text" name="q" value="{query}">
                     <button type="submit">Search</button>
                 </form>
-                <!-- ❌ Raw input dumped into the page -->
                 <p>You searched for: {query}</p>
                 <p>No results found for <b>{query}</b>.</p>
             </body>
@@ -30,15 +30,14 @@ class VulnerableHandler(BaseHTTPRequestHandler):
             self._send(html)
 
         elif parsed.path == "/profile":
-            # ❌ Username from query param injected into an attribute AND page body
-            username = params.get("user", ["guest"])[0]
+            # Escape user input with html.escape() before inserting into attribute and body
+            username = html_module.escape(params.get("user", ["guest"])[0])
 
             html = f"""
             <!DOCTYPE html>
             <html>
             <head><title>Profile</title></head>
             <body>
-                <!-- ❌ Input lands inside an HTML attribute — breaks out with a quote -->
                 <div class="profile" data-user="{username}">
                     <h2>Profile: {username}</h2>
                     <p>Welcome back, {username}!</p>
@@ -49,13 +48,12 @@ class VulnerableHandler(BaseHTTPRequestHandler):
             self._send(html)
 
         elif parsed.path == "/comment":
-            # ❌ Stored XSS simulation — comment saved and re-rendered raw
+            # Escape stored comment with html.escape() before rendering into the DOM
             comment = params.get("text", [""])[0]
             STORED_COMMENTS.append(comment)
 
             comments_html = "".join(
-                # ❌ Each stored comment poured straight into the DOM
-                f"<li>{c}</li>" for c in STORED_COMMENTS
+                f"<li>{html_module.escape(c)}</li>" for c in STORED_COMMENTS
             )
 
             html = f"""
@@ -80,9 +78,11 @@ class VulnerableHandler(BaseHTTPRequestHandler):
     def _send(self, html: str, status: int = 200):
         encoded = html.encode("utf-8")
         self.send_response(status)
-        # ❌ No Content-Security-Policy header set
-        self.send_header("Content-Type", "text/html")
+        self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(encoded)))
+        self.send_header("Content-Security-Policy", "default-src 'self'")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
         self.end_headers()
         self.wfile.write(encoded)
 
