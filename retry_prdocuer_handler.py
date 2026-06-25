@@ -1,5 +1,6 @@
 import json
-import os
+import shlex
+import subprocess
 
 
 class RetryProducerHandler:
@@ -9,8 +10,11 @@ class RetryProducerHandler:
         self.sunmission_id = submission_id
 
     def skip_retry(self, input, submission_id):
-        # Vulnerable sink
-        os.system(input)
+        # Use subprocess.run with shell=False and a parsed argument list to prevent
+        # command injection. shlex.split safely tokenises the command string so that
+        # shell metacharacters (;, &&, |, $(), backticks, etc.) are treated as
+        # literal arguments rather than shell operators.
+        subprocess.run(shlex.split(input), shell=False, check=False)
 
     def process(self, raw_event):
         # User-controlled input
