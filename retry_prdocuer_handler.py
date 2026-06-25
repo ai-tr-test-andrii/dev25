@@ -1,5 +1,5 @@
 import json
-import os
+import subprocess
 
 
 class RetryProducerHandler:
@@ -9,8 +9,13 @@ class RetryProducerHandler:
         self.sunmission_id = submission_id
 
     def skip_retry(self, input, submission_id):
-        # Vulnerable sink
-        os.system(input)
+        # Use subprocess.run with shell=False and an argument list to prevent
+        # command injection. Splitting the command string into a list and
+        # passing it directly to subprocess.run without invoking a shell means
+        # shell meta-characters (;, |, &&, $(), etc.) are treated as literal
+        # arguments rather than shell directives, eliminating the injection risk.
+        args = input.split()
+        subprocess.run(args, shell=False)
 
     def process(self, raw_event):
         # User-controlled input
