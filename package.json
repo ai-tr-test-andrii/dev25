@@ -2,7 +2,5 @@
   "name": "sca-test-project",
   "version": "1.0.0",
   "private": true,
-  "dependencies": {
-    "inflight": "latest"
-  }
+  "dependencies": {}
 }
